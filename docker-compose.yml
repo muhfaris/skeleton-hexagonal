@@ -1,0 +1,30 @@
+version: "3.4"
+
+services:
+  redis:
+    image: "redislabs/rejson:edge"
+    hostname: redis
+    container_name: skelaton-redis
+    restart: on-failure
+    ports:
+      - "6380:6379"
+
+  db:
+    image: postgres:10.1-alpine
+    command:
+      ["postgres", "-c", "log_statement=all", "-c", "log_destination=stderr"]
+    container_name: skelaton_db 
+    hostname: db
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - datadb:/var/lib/postgresql/data
+      - ./files/db:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_USER=admin123
+      - POSTGRES_PASSWORD=admin123
+      - POSTGRES_DB=skelaton_db
+
+volumes:
+  datadb:
