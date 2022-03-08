@@ -10,13 +10,13 @@ import (
 )
 
 type Account struct {
-	ID           uuid.UUID
-	FullName     string
-	Username     string
-	Email        string
-	Password     string
-	HashPassword string
-	Role         string
+	ID           uuid.UUID `json:"id,omitempty"`
+	FullName     string    `json:"full_name,omitempty"`
+	Username     string    `json:"username,omitempty"`
+	Email        string    `json:"email,omitempty"`
+	Password     string    `json:"password,omitempty"`
+	HashPassword string    `json:"hash_password,omitempty"`
+	Role         string    `json:"role,omitempty"`
 }
 
 func CreateAccount(params *structures.SignUpRead) *Account {

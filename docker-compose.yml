@@ -26,5 +26,16 @@ services:
       - POSTGRES_PASSWORD=admin123
       - POSTGRES_DB=skelaton_db
 
+  mongodb:
+      image: mongo:5.0
+      ports:
+        - 27017:27017
+      volumes:
+        - mongodb:/data/db
+      environment:
+        - MONGO_INITDB_ROOT_USERNAME=admin123
+        - MONGO_INITDB_ROOT_PASSWORD=admin123
+
 volumes:
   datadb:
+  mongodb:

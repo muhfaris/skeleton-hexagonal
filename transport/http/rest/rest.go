@@ -42,7 +42,7 @@ func NewRest(port int) *Rest {
 		_ = r.Shutdown()
 	}()
 
-	servicesApp := app.NewServiceApp(cApp.DB)
+	servicesApp := app.NewServiceApp(cApp.Client)
 
 	rest := &Rest{
 		port:     port,

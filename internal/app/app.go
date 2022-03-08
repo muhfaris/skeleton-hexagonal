@@ -1,17 +1,17 @@
 package app
 
 import (
-	"github.com/jackc/pgx/v4"
-	accountrepo "github.com/muhfaris/skeleton-hexagonal/core/repository/mysql/account"
-	userpublicrepo "github.com/muhfaris/skeleton-hexagonal/core/repository/mysql/userpublic"
+	accountrepo "github.com/muhfaris/skeleton-hexagonal/core/repository/mongodb/account"
+	userpublicrepo "github.com/muhfaris/skeleton-hexagonal/core/repository/mongodb/userpublic"
 	"github.com/muhfaris/skeleton-hexagonal/core/services"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type ServiceApp struct {
 	UserPublicService services.UserPublicService
 }
 
-func NewServiceApp(db *pgx.Conn) *ServiceApp {
+func NewServiceApp(db *mongo.Client) *ServiceApp {
 	userPublicRepo := userpublicrepo.NewUserPublicRepo(db)
 	accountRepo := accountrepo.NewAccountRepo(db)
 

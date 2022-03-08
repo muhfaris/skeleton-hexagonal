@@ -9,6 +9,7 @@ import (
 	svcmodel "github.com/muhfaris/skeleton-hexagonal/core/entities/account/service"
 	"github.com/muhfaris/skeleton-hexagonal/core/repository"
 	"github.com/muhfaris/skeleton-hexagonal/transport/structures"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type UserPublicService interface {
@@ -40,7 +41,7 @@ func (service *userPublicService) Login(ctx context.Context, params *structures.
 	}
 
 	if err := account.ComparePassword(params.Password); err != nil {
-		return svcmodel.AccountResponse{}, result.Error
+		return svcmodel.AccountResponse{}, err
 	}
 
 	return *account.Response(), nil
@@ -48,11 +49,11 @@ func (service *userPublicService) Login(ctx context.Context, params *structures.
 
 func (service *userPublicService) SignUp(ctx context.Context, params *structures.SignUpRead) error {
 	result := <-service.accountRepo.FindByEmail(ctx, params.Email)
-	if result.Error != nil && result.Error != pgx.ErrNoRows {
+	if result.Error != nil && result.Error != pgx.ErrNoRows && result.Error != mongo.ErrNoDocuments {
 		return result.Error
 	}
 
-	if result.Error == pgx.ErrNoRows {
+	if result.Error == pgx.ErrNoRows || result.Error == mongo.ErrNoDocuments {
 		account := model.CreateAccount(params)
 		if err := account.GenerateHashPassword(); err != nil {
 			return err
