@@ -1,5 +1,6 @@
 # Go Hexagonal
 ## Hexagonal
+
 `The idea of Hexagonal Architecture is to put inputs and outputs at the edges of our design. Business logic should not depend on whether we expose a REST or a GraphQL API, and it should not depend on where we get data from — a database, a microservice API exposed via gRPC or REST, or just a simple CSV file. (--Netflix Blog)`
 
 ## Definisi Core Concept
@@ -75,6 +76,135 @@ Ada 3 core utama dalam skelaton ini yaitu Entities, Repository dan Services.
         ├── signin.go
         └── signup.go
 
+```
+
+### How to Switch Database
+#### Change to MongoDB
+Reference branch ada di [refactor/switch-to-mongo](https://github.com/muhfaris/skeleton-hexagonal/tree/refactor/switch-to-mongo).
+
+- repository 
+    disini kita akan membuat folder baru `mongodb` dan membuat file baru untuk implementasi interface repository
+```
+│   ├── repository
+│   │   ├── mongodb
+│   │   │   ├── account
+│   │   │   │   ├── mongodb.go
+│   │   │   │   ├── mutation.go
+│   │   │   │   └── query.go
+│   │   │   └── userpublic
+│   │   │       ├── mongodb.go
+│   │   │       ├── mutation.go
+│   │   │       └── query.go
+│   │   ├── mysql
+│   │   │   ├── account
+│   │   │   │   ├── mutation.go
+│   │   │   │   ├── mysql.go
+│   │   │   │   └── query.go
+│   │   │   └── userpublic
+│   │   │       ├── mutation.go
+│   │   │       ├── mysql.go
+│   │   │       └── query.go
+│   │   └── repository.go
+```
+
+- services
+    kita tambahkan sedikit kondisi, dimana ada kode yang baca error dari data source ketika `signup`   
+```diff
+@@ -40,19 +41,19 @@ func (service *userPublicService) Login(ctx context.Context, params *structures.
+	}
+
+	if err := account.ComparePassword(params.Password); err != nil {
+-		return svcmodel.AccountResponse{}, result.Error
++		return svcmodel.AccountResponse{}, err
+	}
+
+	return *account.Response(), nil
+}
+
+func (service *userPublicService) SignUp(ctx context.Context, params *structures.SignUpRead) error {
+	result := <-service.accountRepo.FindByEmail(ctx, params.Email)
+-	if result.Error != nil && result.Error != pgx.ErrNoRows {
++	if result.Error != nil && result.Error != pgx.ErrNoRows && result.Error != mongo.ErrNoDocuments {
+		return result.Error
+	}
+
+-	if result.Error == pgx.ErrNoRows {
++	if result.Error == pgx.ErrNoRows || result.Error == mongo.ErrNoDocuments {
+		account := model.CreateAccount(params)
+		if err := account.GenerateHashPassword(); err != nil {
+			return err
+```
+
+- internal/config
+    buat fungsi untuk melakukan initialize mongodb
+
+```diff 
+type ConfigApp struct {
+-	Port int
+-	DB   *pgx.Conn
++	Port   int
++	DB     *pgx.Conn
++	Client *mongo.Client
+}
+
+func CreateConfigApp() *ConfigApp {
+-	db, err := initDatabase()
++	db, err := initDatabaseMySQL()
++	if err != nil {
++		panic(err)
++	}
++
++	client, err := initDatabaseMongoDB()
+	if err != nil {
+		panic(err)
+	}
+
+	return &ConfigApp{
+-		DB: db,
++		DB:     db,
++		Client: client,
+	}
+}
+
+-func initDatabase() (*pgx.Conn, error) {
++func initDatabaseMySQL() (*pgx.Conn, error) {
+	// urlExample := "postgres://username:password@localhost:5432/database_name"
+	databaseURL := fmt.Sprintf("postgres://admin123:admin123@localhost:5432/skelaton_db")
+	db, err := pgx.Connect(context.Background(), databaseURL)
+@@ -33,3 +42,23 @@ func initDatabase() (*pgx.Conn, error) {
+
+	return db, nil
+}
+
++func initDatabaseMongoDB() (*mongo.Client, error) {
++	credential := options.Credential{
++		Username: "admin123",
++		Password: "admin123",
++	}
++
++	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017").SetAuth(credential)
++	client, err := mongo.NewClient(clientOptions)
++	if err != nil {
++		return nil, err
++	}
++
++	err = client.Connect(context.Background())
++	if err != nil {
++		return nil, err
++	}
++
++	return client, nil
++}
+// transport/http/rest/rest.go
+@@ -42,7 +42,7 @@ func NewRest(port int) *Rest {
+		_ = r.Shutdown()
+	}()
+
+-	servicesApp := app.NewServiceApp(cApp.DB)
++	servicesApp := app.NewServiceApp(cApp.Client)
+
+	rest := &Rest{
+		port:     port,
 ```
 
 ###
