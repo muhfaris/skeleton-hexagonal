@@ -1,0 +1,23 @@
+input SignInRead {
+  username: String!
+  password: String!
+  role: String!
+}
+
+type AccountResponse {
+  id: ID 
+  full_name: String
+  username: String 
+  email: String 
+  role: String 
+  access_token: String
+}
+
+type SignInResponse {
+  status: Int!
+  data: AccountResponse!
+}
+
+extend type Mutation{
+  SignIn(data: SignInRead): SignInResponse
+}

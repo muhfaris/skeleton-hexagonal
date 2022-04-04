@@ -16,6 +16,7 @@ var rootCMD = &cobra.Command{
 // Execute is root function
 func Execute() {
 	rootCMD.AddCommand(restCMD)
+	rootCMD.AddCommand(graphqlCMD)
 	if err := rootCMD.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

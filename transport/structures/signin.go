@@ -6,3 +6,7 @@ type LoginRead struct {
 	Password string `json:"password"`
 	Role     string `json:"role"`
 }
+
+type DataLoginRead struct {
+	Data *LoginRead `json:"data,omitempty"`
+}
